@@ -105,24 +105,34 @@ class CodeEditor(QPlainTextEdit):
     def line_number_area_paint_event(self, event):
         painter = QPainter(self.line_number_area)
         painter.fillRect(event.rect(), QColor(245, 245, 245))
+
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
-        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
-        bottom = top + int(self.blockBoundingRect(block).height())
 
-        while block.isValid() and top <= event.rect().bottom():
-            if block.isVisible() and bottom >= event.rect().top():
+        offset = self.contentOffset()
+        fm = self.fontMetrics()
+
+        while block.isValid():
+            rect = self.blockBoundingGeometry(block).translated(offset)
+            top = rect.top()
+            bottom = rect.bottom()
+
+            if bottom >= event.rect().top() and top <= event.rect().bottom():
+                number = str(block_number + 1)
                 painter.setPen(QColor(0, 0, 0))
                 painter.drawText(
-                    0, top,
+                    0,
+                    int(top),
                     self.line_number_area.width() - 4,
-                    self.fontMetrics().height(),
+                    fm.height(),
                     Qt.AlignmentFlag.AlignRight,
-                    str(block_number + 1)
+                    number
                 )
+
+            if top > event.rect().bottom():
+                break
+
             block = block.next()
-            top = bottom
-            bottom = top + int(self.blockBoundingRect(block).height())
             block_number += 1
 
 
@@ -199,7 +209,6 @@ class CentralWidget(QWidget):
 
         self.add_tab()
 
-        # таблица по умолчанию
         self.show_results_table([])
 
     def apply_font_size(self):
@@ -219,7 +228,7 @@ class CentralWidget(QWidget):
 
     def _sync_output(self):
         if 0 <= self.current_index < len(self.tabs):
-            self.tabs[self.current_index]["output"] = self.output.toPlainText()
+            self.tabs[self.current_index]["output"] = self.output.toHtml()
             self.tabs[self.current_index]["modified"] = True
 
     def _update_tab_buttons_state(self):
@@ -360,8 +369,14 @@ class CentralWidget(QWidget):
 
     def show_results_table(self, results):
         html = """
+        <style>
+            body { margin: 0; padding: 0; }
+            table { width: 100%; border-collapse: collapse; }
+            td { width: auto; }
+        </style>
+
         <table border="1" cellspacing="0" cellpadding="4"
-               style="border-collapse: collapse; font-size: 14px;">
+               style="font-size: 14px; width: 100%;">
             <tr style="background:#e6e6e6; font-weight: bold;">
                 <td>№</td>
                 <td>File</td>
