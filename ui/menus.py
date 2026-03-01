@@ -36,3 +36,14 @@ class MenuBuilder:
         help_menu = menubar.addMenu("Справка")
         help_menu.addAction(actions.menu_help)
         help_menu.addAction(actions.menu_about)
+
+        localization_menu = menubar.addMenu("Локализация")
+        localization_menu.addAction("Русский")
+        localization_menu.addAction("Английский")
+
+        view_menu = menubar.addMenu("Вид")
+        font_menu = view_menu.addMenu("Размер шрифта")
+
+        word_sizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
+        for size in word_sizes:
+            font_menu.addAction(str(size))
