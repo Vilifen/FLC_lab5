@@ -143,6 +143,8 @@ class CentralWidget(QWidget):
         self.untitled_counter = 1
         self.font_size = 14
         self.output_mode = "build"
+        self.current_output = "build"
+        self.last_errors = []
 
         self.setAcceptDrops(True)
 
@@ -203,13 +205,11 @@ class CentralWidget(QWidget):
         self.build_btn = QPushButton("Сборка")
         self.build_btn.setCheckable(True)
         self.build_btn.setFixedHeight(32)
-        self.build_btn.setStyleSheet(self._tab_style())
         self.build_btn.clicked.connect(lambda: self.switch_output("build"))
 
         self.err_btn = QPushButton("Ошибки")
         self.err_btn.setCheckable(True)
         self.err_btn.setFixedHeight(32)
-        self.err_btn.setStyleSheet(self._tab_style())
         self.err_btn.clicked.connect(lambda: self.switch_output("errors"))
 
         self.output_tabs_layout.addWidget(self.build_btn)
@@ -231,62 +231,9 @@ class CentralWidget(QWidget):
         self.add_tab()
         self.show_build_log("")
 
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-        else:
-            event.ignore()
-
-    def dropEvent(self, event):
-        if not event.mimeData().hasUrls():
-            event.ignore()
-            return
-
-        urls = event.mimeData().urls()
-        if not urls:
-            return
-
-        path = urls[0].toLocalFile()
-        if not path:
-            return
-
-        self._open_file_from_path(path)
-
-    def _open_file_from_path(self, path):
-        title = path.split("/")[-1]
-        self.add_tab(title)
-
-        editor = self.current_editor()
-        with open(path, "r", encoding="utf-8") as f:
-            editor.setPlainText(f.read())
-
-        self.show_build_log(f"Файл открыт: {path}")
-        self.show_results_table([])
-
-    def _tab_style(self):
-        return """
-            QPushButton {
-                background: #e6e6e6;
-                border: 1px solid #a0a0a0;
-                padding: 4px 12px;
-                min-width: 110px;
-                color: black;
-            }
-            QPushButton:checked {
-                background: #ffffff;
-                border-bottom: 1px solid #ffffff;
-                color: black;
-            }
-        """
-
     def switch_output(self, mode):
         self.output_mode = mode
+        self.current_output = mode
         self.build_btn.setChecked(mode == "build")
         self.err_btn.setChecked(mode == "errors")
 
@@ -319,10 +266,6 @@ class CentralWidget(QWidget):
             else:
                 self.tabs[self.current_index]["errors_html"] = self.output.toHtml()
 
-    def _update_tab_buttons_state(self):
-        for i, tab in enumerate(self.tabs):
-            tab["button"].setChecked(i == self.current_index)
-
     def _update_status(self):
         w = self.window()
         if hasattr(w, "update_status_bar"):
@@ -334,14 +277,18 @@ class CentralWidget(QWidget):
             self._sync_output()
 
         if not title:
-            title = f"Без имени {self.untitled_counter}"
+            w = self.window()
+            if w and hasattr(w, "labels"):
+                base = "Без имени" if w.labels is w.labels_ru else "Untitled"
+            else:
+                base = "Без имени"
+            title = f"{base} {self.untitled_counter}"
             self.untitled_counter += 1
 
         btn = QPushButton(f"{title}   ✕")
         btn.setCheckable(True)
         btn.setFlat(True)
         btn.setFixedHeight(32)
-        btn.setStyleSheet(self._tab_style())
 
         index = len(self.tabs)
         btn.clicked.connect(partial(self.switch_tab, index))
@@ -360,7 +307,6 @@ class CentralWidget(QWidget):
 
         self.current_index = index
         self._load_tab()
-        self._update_tab_buttons_state()
         self.switch_output("build")
         self._update_status()
 
@@ -410,7 +356,6 @@ class CentralWidget(QWidget):
 
         self.current_index = max(0, index - 1)
         self._load_tab()
-        self._update_tab_buttons_state()
         self.switch_output("build")
         self._update_status()
 
@@ -426,7 +371,6 @@ class CentralWidget(QWidget):
 
         self.current_index = index
         self._load_tab()
-        self._update_tab_buttons_state()
         self.switch_output("build")
         self._update_status()
 
@@ -445,19 +389,38 @@ class CentralWidget(QWidget):
         return self.editor
 
     def show_build_log(self, text):
+        w = self.window()
+        is_en = False
+        if w and hasattr(w, "labels") and w.labels is w.labels_en:
+            is_en = True
+
+        if is_en:
+            if text.strip() == "":
+                text = "Build started..."
+            text = text.replace("Сборка завершена", "Build finished")
+            text = text.replace("Ошибок не найдено", "No errors found")
+
         self.tabs[self.current_index]["build_log"] = text
         if self.output_mode == "build":
             self.output.setPlainText(text)
 
     def show_results_table(self, results):
+        w = self.window()
+        is_en = False
+        if w and hasattr(w, "labels") and w.labels is w.labels_en:
+            is_en = True
+
+        self.last_errors = results
+
         if not results:
-            html = """
+            msg = "No errors" if is_en else "Нет ошибок"
+            html = f"""
             <style>
-                body { margin: 0; padding: 0; }
-                table { width: 100%; border-collapse: collapse; }
+                body {{ margin: 0; padding: 0; }}
+                table {{ width: 100%; border-collapse: collapse; }}
             </style>
             <table border="1" cellspacing="0" cellpadding="4" style="width:100%; font-size:14px;">
-                <tr><td style="text-align:center; color:#666;">Нет ошибок</td></tr>
+                <tr><td style="text-align:center; color:#666;">{msg}</td></tr>
             </table>
             """
             self.tabs[self.current_index]["errors_html"] = html
@@ -465,25 +428,43 @@ class CentralWidget(QWidget):
                 self.output.setHtml(html)
             return
 
-        html = """
+        headers = {
+            "num": "#" if is_en else "№",
+            "file": "File" if is_en else "Файл",
+            "line": "Line" if is_en else "Строка",
+            "col": "Column" if is_en else "Позиция",
+            "msg": "Message" if is_en else "Сообщение",
+        }
+
+        html = f"""
         <style>
-            body { margin: 0; padding: 0; }
-            table { width: 100%; border-collapse: collapse; }
+            body {{ margin: 0; padding: 0; }}
+            table {{ width: 100%; border-collapse: collapse; }}
         </style>
         <table border="1" cellspacing="0" cellpadding="4" style="width:100%; font-size:14px;">
             <tr style="background:#e6e6e6; font-weight:bold;">
-                <td>№</td><td>File</td><td>Line</td><td>Column</td><td>Message</td>
+                <td>{headers['num']}</td>
+                <td>{headers['file']}</td>
+                <td>{headers['line']}</td>
+                <td>{headers['col']}</td>
+                <td>{headers['msg']}</td>
             </tr>
         """
 
         for i, r in enumerate(results, start=1):
+            msg = r["message"]
+            if is_en:
+                msg = msg.replace("Ошибка", "Error")
+                msg = msg.replace("строка", "line")
+                msg = msg.replace("позиция", "position")
+
             html += f"""
             <tr>
                 <td>{i}</td>
                 <td>{r['file']}</td>
                 <td>{r['line']}</td>
                 <td>{r['column']}</td>
-                <td>{r['message']}</td>
+                <td>{msg}</td>
             </tr>
             """
 
@@ -492,9 +473,3 @@ class CentralWidget(QWidget):
         self.tabs[self.current_index]["errors_html"] = html
         if self.output_mode == "errors":
             self.output.setHtml(html)
-
-    def rename_current_tab(self, title):
-        if 0 <= self.current_index < len(self.tabs):
-            self.tabs[self.current_index]["title"] = title
-            self.tabs[self.current_index]["button"].setText(f"{title}   ✕")
-            self._update_status()
