@@ -20,7 +20,6 @@ class ActionManager:
 
         self.run = QAction(QIcon("ui/icons/launch.png"), "", window)
 
-        # Иконка справки
         self.help = QAction(QIcon("ui/icons/reference.png"), "", window)
         self.about = QAction(QIcon("ui/icons/information.png"), "", window)
 
@@ -90,7 +89,6 @@ class ActionManager:
         self.run.setShortcut("F5")
         self.menu_run.setShortcut("F5")
 
-        # Горячая клавиша справки
         self.help.setShortcut("F1")
         self.menu_help.setShortcut("F1")
 
@@ -183,11 +181,9 @@ class ActionManager:
         self.menu_run.triggered.connect(lambda: self.ctrl.run(self.win))
         self.run.triggered.connect(lambda: self.ctrl.run(self.win))
 
-        # Справка — теперь вызывает окно HTML
         self.menu_help.triggered.connect(self.win.show_help)
         self.help.triggered.connect(self.win.show_help)
 
-        # О программе
         self.menu_about.triggered.connect(lambda: self.ctrl.about(self.win, self.win.get_output()))
         self.about.triggered.connect(lambda: self.ctrl.about(self.win, self.win.get_output()))
 

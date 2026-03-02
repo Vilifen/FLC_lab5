@@ -42,4 +42,3 @@ class MenuBuilder:
         localization_menu.addAction(actions.lang_en)
 
         view_menu = menubar.addMenu(window.labels["view"])
-        # Больше НИКАКИХ font_menu здесь нет
