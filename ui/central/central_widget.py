@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSizePolicy,
     QScrollArea, QTableWidget, QTableWidgetItem, QHeaderView
 )
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QColor
 from PyQt6.QtCore import Qt
 from functools import partial
 from ui.editor.code_editor import CodeEditor
@@ -243,10 +243,24 @@ class CentralWidget(QWidget):
     def show_results_table(self, rows):
         self.table.setRowCount(len(rows))
         for i, r in enumerate(rows):
-            self.table.setItem(i, 0, QTableWidgetItem(str(r["code"])))
-            self.table.setItem(i, 1, QTableWidgetItem(r["type"]))
-            self.table.setItem(i, 2, QTableWidgetItem(r["lexeme"]))
-            self.table.setItem(i, 3, QTableWidgetItem(r["location"]))
+            items = [
+                QTableWidgetItem(str(r["code"])),
+                QTableWidgetItem(r["type"]),
+                QTableWidgetItem(r["lexeme"]),
+                QTableWidgetItem(r["location"])
+            ]
+
+            is_error = (
+                r["type"].lower().startswith("недопуст")
+                or r["type"].lower().startswith("ошиб")
+                or r["code"] == 99
+            )
+
+            for col, item in enumerate(items):
+                if is_error:
+                    item.setBackground(QColor("#e88080"))
+                    item.setForeground(Qt.GlobalColor.white)
+                self.table.setItem(i, col, item)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
