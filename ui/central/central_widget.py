@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QSizePolicy,
-    QScrollArea, QTextEdit, QTableWidget, QTableWidgetItem
+    QScrollArea, QTableWidget, QTableWidgetItem, QHeaderView
 )
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
@@ -17,12 +17,15 @@ class CentralWidget(QWidget):
         self.untitled_counter = 1
         self.font_size = 14
         self.output_mode = "build"
+        self.token_rows = []
+        self.error_rows = []
 
         self.setAcceptDrops(True)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        self.editor_area = QWidget()
+        editor_layout = QVBoxLayout(self.editor_area)
+        editor_layout.setContentsMargins(0, 0, 0, 0)
+        editor_layout.setSpacing(0)
 
         self.tab_scroll = QScrollArea()
         self.tab_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
@@ -48,17 +51,6 @@ class CentralWidget(QWidget):
         self.plus_button = QPushButton("+")
         self.plus_button.setFixedWidth(28)
         self.plus_button.setFlat(True)
-        self.plus_button.setStyleSheet("""
-            QPushButton {
-                background: #e6e6e6;
-                border: 1px solid #a0a0a0;
-                padding: 4px 8px;
-                color: black;
-            }
-            QPushButton:hover {
-                background: #f2f2f2;
-            }
-        """)
         self.plus_button.clicked.connect(self.add_tab)
 
         self.spacer = QWidget()
@@ -68,6 +60,15 @@ class CentralWidget(QWidget):
         self.tab_layout.addWidget(self.spacer)
 
         self.editor = CodeEditor()
+
+        editor_layout.addWidget(self.tab_scroll)
+        editor_layout.addWidget(self.editor)
+
+        self.results_area = QWidget()
+        results_layout = QVBoxLayout(self.results_area)
+        results_layout.setContentsMargins(0, 0, 0, 0)
+        results_layout.setSpacing(0)
+        self.results_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.output_tabs = QWidget()
         self.output_tabs_layout = QHBoxLayout(self.output_tabs)
@@ -87,20 +88,17 @@ class CentralWidget(QWidget):
         self.output_tabs_layout.addWidget(self.build_btn)
         self.output_tabs_layout.addWidget(self.err_btn)
 
-        self.output = QTextEdit()
-        self.output.setReadOnly(True)
-        self.output.hide()
-
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Код", "Тип", "Лексема", "Местоположение"])
+        self.table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        results_layout.addWidget(self.output_tabs)
+        results_layout.addWidget(self.table)
 
         self.apply_font_size()
-
-        layout.addWidget(self.tab_scroll)
-        layout.addWidget(self.editor, 3)
-        layout.addWidget(self.output_tabs)
-        layout.addWidget(self.table, 1)
 
         self.editor.textChanged.connect(self._sync_editor)
         self.editor.textChanged.connect(self._update_status)
@@ -111,7 +109,6 @@ class CentralWidget(QWidget):
         font = QFont()
         font.setPointSize(self.font_size)
         self.editor.setFont(font)
-        self.output.setFont(font)
         self.table.setFont(font)
 
     def set_font_size(self, size):
@@ -133,11 +130,7 @@ class CentralWidget(QWidget):
             self.tabs[self.current_index]["text"] = self.editor.toPlainText()
 
         if not title:
-            w = self.window()
-            if w and hasattr(w, "labels"):
-                base = "Без имени" if w.labels is w.labels_ru else "Untitled"
-            else:
-                base = "Без имени"
+            base = "Без имени"
             title = f"{base} {self.untitled_counter}"
             self.untitled_counter += 1
 
@@ -161,8 +154,8 @@ class CentralWidget(QWidget):
 
         self.current_index = index
         self._load_tab()
-        self.switch_output("build")
         self._update_status()
+        self.switch_output(self.output_mode)
 
     def _tab_mouse_press(self, event, index, button):
         if event.pos().x() > button.width() - 18:
@@ -180,11 +173,11 @@ class CentralWidget(QWidget):
 
         from PyQt6.QtWidgets import QMessageBox
         msg = QMessageBox(self)
-        msg.setWindowTitle(w.labels["save_title"])
-        msg.setText(f"{w.labels['save_text']} «{data['title']}»?")
-        yes_btn = msg.addButton(w.labels["yes"], QMessageBox.ButtonRole.YesRole)
-        no_btn = msg.addButton(w.labels["no"], QMessageBox.ButtonRole.NoRole)
-        cancel_btn = msg.addButton(w.labels["cancel"], QMessageBox.ButtonRole.RejectRole)
+        msg.setWindowTitle("Сохранить файл?")
+        msg.setText(f"Сохранить изменения в файле «{data['title']}»?")
+        yes_btn = msg.addButton("Да", QMessageBox.ButtonRole.YesRole)
+        no_btn = msg.addButton("Нет", QMessageBox.ButtonRole.NoRole)
+        cancel_btn = msg.addButton("Отмена", QMessageBox.ButtonRole.RejectRole)
         msg.setDefaultButton(yes_btn)
         msg.exec()
         clicked = msg.clickedButton()
@@ -196,6 +189,7 @@ class CentralWidget(QWidget):
 
         self.close_tab(index)
         self._update_status()
+        self.switch_output(self.output_mode)
 
     def close_tab(self, index):
         if len(self.tabs) == 1:
@@ -211,8 +205,8 @@ class CentralWidget(QWidget):
 
         self.current_index = max(0, index - 1)
         self._load_tab()
-        self.switch_output("build")
         self._update_status()
+        self.switch_output(self.output_mode)
 
     def switch_tab(self, index):
         if index == self.current_index:
@@ -225,8 +219,8 @@ class CentralWidget(QWidget):
 
         self.current_index = index
         self._load_tab()
-        self.switch_output("build")
         self._update_status()
+        self.switch_output(self.output_mode)
 
     def _load_tab(self):
         data = self.tabs[self.current_index]
@@ -234,18 +228,17 @@ class CentralWidget(QWidget):
         self.editor.setPlainText(data["text"])
         self.editor.blockSignals(False)
 
+    def set_results(self, token_rows, error_rows):
+        self.token_rows = token_rows
+        self.error_rows = error_rows
+        self.switch_output(self.output_mode)
+
     def switch_output(self, mode):
         self.output_mode = mode
         self.build_btn.setChecked(mode == "build")
         self.err_btn.setChecked(mode == "errors")
 
-        w = self.window()
-        if not hasattr(w, "last_rows"):
-            self.table.setRowCount(0)
-            return
-
-        token_rows, error_rows = w.last_rows
-        rows = token_rows if mode == "build" else error_rows
+        rows = self.token_rows if mode == "build" else self.error_rows
         self.show_results_table(rows)
 
     def show_results_table(self, rows):

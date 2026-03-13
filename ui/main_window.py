@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QMessageBox, QStatusBar, QDialog,
-    QVBoxLayout, QTextBrowser
+    QVBoxLayout, QTextBrowser, QWidget, QSplitter
 )
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QUrl, Qt
 import os
 
 from ui.central.central_widget import CentralWidget
@@ -117,24 +117,27 @@ class MainWindow(QMainWindow):
         }
 
         self.labels = self.labels_ru
-        self.last_rows = ([], [])
 
         self.setWindowTitle("Текстовый редактор")
         self.resize(1000, 700)
         self.menuBar().setNativeMenuBar(False)
 
         self.status = QStatusBar()
-        self.status.setStyleSheet("""
-            QStatusBar {
-                background: white;
-                color: black;
-                border-top: 1px solid #c0c0c0;
-            }
-        """)
         self.setStatusBar(self.status)
 
         self.central = CentralWidget()
-        self.setCentralWidget(self.central)
+
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.addWidget(self.central.editor_area)
+        splitter.addWidget(self.central.results_area)
+        splitter.setSizes([600, 300])
+        splitter.setHandleWidth(6)
+
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(splitter)
+        self.setCentralWidget(container)
 
         self.actions = ActionManager(self, controller)
         MenuBuilder(self, self.actions)
@@ -155,19 +158,21 @@ class MainWindow(QMainWindow):
         editor = self.central.editor
 
         token_rows, error_rows = run_scanner(editor)
-        self.last_rows = (token_rows, error_rows)
-
-        rows = token_rows if self.central.output_mode == "build" else error_rows
-        self.central.show_results_table(rows)
+        self.central.set_results(token_rows, error_rows)
 
         def on_click(item):
             row = item.row()
-            if 0 <= row < len(rows) and "line" in rows[row] and "col" in rows[row]:
-                navigate_to_error(editor, rows[row]["line"], rows[row]["col"])
+            current_rows = (
+                self.central.token_rows
+                if self.central.output_mode == "build"
+                else self.central.error_rows
+            )
+            if 0 <= row < len(current_rows) and "line" in current_rows[row] and "col" in current_rows[row]:
+                navigate_to_error(editor, current_rows[row]["line"], current_rows[row]["col"])
 
         try:
             self.central.table.itemClicked.disconnect()
-        except TypeError:
+        except:
             pass
         self.central.table.itemClicked.connect(on_click)
 
@@ -207,7 +212,6 @@ class MainWindow(QMainWindow):
         size = len(text.encode("utf-8"))
         lines = text.count("\n") + 1
         lang = "RU" if self.labels is self.labels_ru else "EN"
-
         self.status.showMessage(
             f"{self.labels['status_lang']}: {lang}    "
             f"{self.labels['status_size']}: {size} B    "
