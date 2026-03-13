@@ -237,7 +237,6 @@ class CentralWidget(QWidget):
         self.output_mode = mode
         self.build_btn.setChecked(mode == "build")
         self.err_btn.setChecked(mode == "errors")
-
         rows = self.token_rows if mode == "build" else self.error_rows
         self.show_results_table(rows)
 

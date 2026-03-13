@@ -67,55 +67,6 @@ class MainWindow(QMainWindow):
             "errors": "Ошибки",
         }
 
-        self.labels_en = {
-            "file": "File",
-            "edit": "Edit",
-            "text": "Text",
-            "run": "Run",
-            "help": "Help",
-            "localization": "Language",
-            "view": "View",
-            "font_size": "Font size",
-            "new": "New",
-            "open": "Open",
-            "save": "Save",
-            "save_as": "Save as",
-            "exit": "Exit",
-            "undo": "Undo",
-            "redo": "Redo",
-            "cut": "Cut",
-            "copy": "Copy",
-            "paste": "Paste",
-            "delete": "Delete",
-            "select_all": "Select all",
-            "task": "Task description",
-            "grammar": "Grammar",
-            "grammar_class": "Grammar classification",
-            "method": "Analysis method",
-            "example": "Example",
-            "literature": "References",
-            "source": "Source code",
-            "about": "About",
-            "info_title": "Information",
-            "error_label": "Error",
-            "forbidden_word": "Error",
-            "line_word": "line",
-            "pos_word": "position",
-            "no_errors": "No errors found.",
-            "help_text": "Help",
-            "about_text": "About",
-            "save_title": "Save file?",
-            "save_text": "Save changes to file",
-            "yes": "Yes",
-            "no": "No",
-            "cancel": "Cancel",
-            "status_lang": "Language",
-            "status_size": "Size",
-            "status_lines": "Lines",
-            "build": "Build",
-            "errors": "Errors",
-        }
-
         self.labels = self.labels_ru
 
         self.setWindowTitle("Текстовый редактор")
@@ -145,30 +96,23 @@ class MainWindow(QMainWindow):
 
         self._build_font_menu()
 
-        self.set_language("ru")
-        self.update_status_bar()
-
         self.central.editor.textChanged.connect(self.update_status_bar)
-
-        self.setAcceptDrops(True)
-
         self.actions.run.triggered.connect(self.run_scanner_action)
 
     def run_scanner_action(self):
         editor = self.central.editor
-
         token_rows, error_rows = run_scanner(editor)
         self.central.set_results(token_rows, error_rows)
 
         def on_click(item):
             row = item.row()
-            current_rows = (
+            rows = (
                 self.central.token_rows
                 if self.central.output_mode == "build"
                 else self.central.error_rows
             )
-            if 0 <= row < len(current_rows) and "line" in current_rows[row] and "col" in current_rows[row]:
-                navigate_to_error(editor, current_rows[row]["line"], current_rows[row]["col"])
+            if 0 <= row < len(rows):
+                navigate_to_error(editor, rows[row]["line"], rows[row]["col"])
 
         try:
             self.central.table.itemClicked.disconnect()
@@ -211,61 +155,7 @@ class MainWindow(QMainWindow):
         text = self.central.editor.toPlainText()
         size = len(text.encode("utf-8"))
         lines = text.count("\n") + 1
-        lang = "RU" if self.labels is self.labels_ru else "EN"
-        self.status.showMessage(
-            f"{self.labels['status_lang']}: {lang}    "
-            f"{self.labels['status_size']}: {size} B    "
-            f"{self.labels['status_lines']}: {lines}"
-        )
-
-    def set_language(self, lang: str):
-        if lang == "ru":
-            self.labels = self.labels_ru
-        else:
-            self.labels = self.labels_en
-
-        self.actions.update_texts()
-
-        self.menuBar().clear()
-        from ui.menus import MenuBuilder
-        MenuBuilder(self, self.actions)
-
-        self._build_font_menu()
-
-        for tab in self.central.tabs:
-            title = tab["title"]
-            tab["button"].setText(f"{title}   ✕")
-
-        self.central.build_btn.setText(self.labels["build"])
-        self.central.err_btn.setText(self.labels["errors"])
-
-        self.update_status_bar()
-        self.repaint()
-
-    def get_editor(self):
-        return self.central.editor
-
-    def get_output(self):
-        return self.central.output
-
-    def closeEvent(self, event):
-        for tab in self.central.tabs:
-            if tab.get("modified"):
-                msg = QMessageBox(self)
-                msg.setWindowTitle(self.labels["save_title"])
-                msg.setText(f"{self.labels['save_text']} «{tab['title']}»?")
-                yes_btn = msg.addButton(self.labels["yes"], QMessageBox.ButtonRole.YesRole)
-                no_btn = msg.addButton(self.labels["no"], QMessageBox.ButtonRole.NoRole)
-                cancel_btn = msg.addButton(self.labels["cancel"], QMessageBox.ButtonRole.RejectRole)
-                msg.setDefaultButton(yes_btn)
-                msg.exec()
-                clicked = msg.clickedButton()
-                if clicked is cancel_btn:
-                    event.ignore()
-                    return
-                if clicked is yes_btn:
-                    self.actions.save.trigger()
-        event.accept()
+        self.status.showMessage(f"Язык: RU    Размер: {size} B    Строк: {lines}")
 
     def dragEnterEvent(self, event):
         event.acceptProposedAction()
