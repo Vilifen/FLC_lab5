@@ -21,14 +21,18 @@ while ($i < 10) {
 
 Сканер распознает токены языка PHP цикал while. В результате работы формируются таблицы - таблица c результатами (списком всех токенов) и таблица с ошибками. 
 
+
 # Тестовые примеры.
 Корректная строка
-![](https://raw.githubusercontent.com/Vilifen/photo/main/Снимок%20экрана%202026-03-14%20в%2006.25.08.png)
+
+![](https://raw.githubusercontent.com/Vilifen/photo/main/Снимок%20экрана%202026-03-14%20в%2007.06.01.png)
 
 Строка с недопустимым символом
+
 ![](https://raw.githubusercontent.com/Vilifen/photo/main/Снимок%20экрана%202026-03-14%20в%2007.07.22.png)
 
 Многострочный пример
+
 ![](https://raw.githubusercontent.com/Vilifen/photo/main/Снимок%20экрана%202026-03-14%20в%2007.07.54.png)
 
 ![](https://raw.githubusercontent.com/Vilifen/photo/main/Снимок%20экрана%202026-03-14%20в%2007.08.06.png)
