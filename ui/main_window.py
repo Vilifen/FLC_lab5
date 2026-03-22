@@ -139,6 +139,10 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(splitter)
+
+        self.error_status = QStatusBar()
+        layout.addWidget(self.error_status)
+
         self.setCentralWidget(container)
 
         self.actions = ActionManager(self, controller)
@@ -198,6 +202,8 @@ class MainWindow(QMainWindow):
         editor = self.central.editor
         token_rows, error_rows = run_scanner(editor)
         self.central.set_results(token_rows, error_rows)
+
+        self.error_status.showMessage(f"Количество ошибок: {len(error_rows)}")
 
         def on_click(item):
             row = item.row()

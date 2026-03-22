@@ -250,30 +250,24 @@ class CentralWidget(QWidget):
         if self.output_mode == "errors":
             self.table.setColumnCount(3)
             self.table.setHorizontalHeaderLabels(["Неверный фрагмент", "Местоположение", "Описание"])
-            self.table.setRowCount(len(rows) + 1)
 
+            if not rows:
+                self.table.setRowCount(1)
+                self.table.setItem(0, 0, QTableWidgetItem(""))
+                self.table.setItem(0, 1, QTableWidgetItem(""))
+                self.table.setItem(0, 2, QTableWidgetItem("Ошибок нет"))
+                return
+
+            self.table.setRowCount(len(rows))
             for i, r in enumerate(rows):
                 fragment = r.get("fragment", r.get("lexeme", ""))
                 location = r.get("location", "")
                 description = r.get("description", r.get("type", ""))
 
-                items = [
-                    QTableWidgetItem(fragment),
-                    QTableWidgetItem(location),
-                    QTableWidgetItem(description)
-                ]
+                self.table.setItem(i, 0, QTableWidgetItem(fragment))
+                self.table.setItem(i, 1, QTableWidgetItem(location))
+                self.table.setItem(i, 2, QTableWidgetItem(description))
 
-                for col, item in enumerate(items):
-                    self.table.setItem(i, col, item)
-
-            total_row = len(rows)
-            total_item = QTableWidgetItem("Общее количество ошибок:")
-            total_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
-            count_item = QTableWidgetItem(str(len(rows)))
-            count_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
-
-            self.table.setItem(total_row, 0, total_item)
-            self.table.setItem(total_row, 1, count_item)
         else:
             self.table.setColumnCount(4)
             self.table.setHorizontalHeaderLabels(["Условный код", "Тип лексемы", "Лексема", "Местоположение"])
@@ -285,15 +279,10 @@ class CentralWidget(QWidget):
                 lexeme = r.get("lexeme", "")
                 location = r.get("location", "")
 
-                items = [
-                    QTableWidgetItem(code),
-                    QTableWidgetItem(type_),
-                    QTableWidgetItem(lexeme),
-                    QTableWidgetItem(location)
-                ]
-
-                for col, item in enumerate(items):
-                    self.table.setItem(i, col, item)
+                self.table.setItem(i, 0, QTableWidgetItem(code))
+                self.table.setItem(i, 1, QTableWidgetItem(type_))
+                self.table.setItem(i, 2, QTableWidgetItem(lexeme))
+                self.table.setItem(i, 3, QTableWidgetItem(location))
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
