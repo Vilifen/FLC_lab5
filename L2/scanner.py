@@ -42,23 +42,17 @@ class Scanner:
             elif ch == "\n":
                 self._add(TokenType.WHITESPACE, ch)
                 self._advance()
-
             elif ch == "$":
                 self._consume_identifier()
-
             elif ch.isalpha() or ch == "_":
                 self._consume_word()
-
             elif ch.isdigit():
                 self._consume_number()
-
             elif ch in self.SEPARATORS:
                 self._add(TokenType.SEPARATOR, ch)
                 self._advance()
-
             elif self._starts_operator():
                 self._consume_operator()
-
             else:
                 self._error("Недопустимый символ", "INVALID_CHAR", ch)
                 self._advance()
@@ -118,19 +112,7 @@ class Scanner:
             self.tokens.append(Token(TokenType.KEYWORD, value, start_line, start_col))
             return
 
-        self.errors.append(
-            ScanError(
-                ERROR_CODES["INVALID_CHAR"],
-                "Переменные должны начинаться с '$'",
-                start_line,
-                start_col,
-                value
-            )
-        )
-
-        self.tokens.append(
-            Token(TokenType.IDENTIFIER, value, start_line, start_col)
-        )
+        self.tokens.append(Token(TokenType.UNKNOWN, value, start_line, start_col))
 
     def _consume_number(self):
         start_line, start_col = self.line, self.col

@@ -1,10 +1,11 @@
-from enum import Enum, auto
+from enum import Enum
 
 class TokenType(Enum):
-    KEYWORD = auto()
-    IDENTIFIER = auto()
-    NUMBER = auto()
-    OPERATOR = auto()
-    SEPARATOR = auto()
-    WHITESPACE = auto()
-    EOF = auto()
+    KEYWORD = 1
+    IDENTIFIER = 2
+    NUMBER = 3
+    OPERATOR = 4
+    SEPARATOR = 5
+    WHITESPACE = 6
+    UNKNOWN = 7
+    EOF = 8
