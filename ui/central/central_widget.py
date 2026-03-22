@@ -258,8 +258,8 @@ class CentralWidget(QWidget):
 
             for col, item in enumerate(items):
                 if is_error:
-                    item.setBackground(QColor("#e88080"))
-                    item.setForeground(Qt.GlobalColor.white)
+                    item.setBackground(QColor("white"))
+                    item.setForeground(Qt.GlobalColor.black)
                 self.table.setItem(i, col, item)
 
     def dragEnterEvent(self, event):
