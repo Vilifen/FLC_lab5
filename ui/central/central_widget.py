@@ -247,26 +247,42 @@ class CentralWidget(QWidget):
         self.show_results_table(rows)
 
     def show_results_table(self, rows):
-        self.table.setRowCount(len(rows))
-        for i, r in enumerate(rows):
-            items = [
-                QTableWidgetItem(str(r["code"])),
-                QTableWidgetItem(r["type"]),
-                QTableWidgetItem(r["lexeme"]),
-                QTableWidgetItem(r["location"])
-            ]
+        if self.output_mode == "errors":
+            self.table.setColumnCount(3)
+            self.table.setHorizontalHeaderLabels(["Неверный фрагмент", "Местоположение", "Описание"])
+        else:
+            self.table.setColumnCount(4)
+            self.table.setHorizontalHeaderLabels(["Условный код", "Тип лексемы", "Лексема", "Местоположение"])
 
-            is_error = (
-                r["type"].lower().startswith("недопуст")
-                or r["type"].lower().startswith("ошиб")
-                or r["code"] == 99
-            )
+        self.table.setRowCount(len(rows))
+
+        for i, r in enumerate(rows):
+            if self.output_mode == "errors":
+                items = [
+                    QTableWidgetItem(r["lexeme"]),
+                    QTableWidgetItem(r["location"]),
+                    QTableWidgetItem(r["type"])
+                ]
+            else:
+                items = [
+                    QTableWidgetItem(str(r["code"])),
+                    QTableWidgetItem(r["type"]),
+                    QTableWidgetItem(r["lexeme"]),
+                    QTableWidgetItem(r["location"])
+                ]
 
             for col, item in enumerate(items):
-                if is_error:
-                    item.setBackground(QColor("white"))
-                    item.setForeground(Qt.GlobalColor.black)
                 self.table.setItem(i, col, item)
+
+        if self.output_mode == "errors":
+            self.table.insertRow(self.table.rowCount())
+            total_item = QTableWidgetItem("Общее количество ошибок:")
+            total_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+            count_item = QTableWidgetItem(str(len(rows)))
+            count_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+
+            self.table.setItem(self.table.rowCount() - 1, 0, total_item)
+            self.table.setItem(self.table.rowCount() - 1, 1, count_item)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
