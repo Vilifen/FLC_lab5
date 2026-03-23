@@ -197,11 +197,11 @@ class Parser:
 
         if q:
             if is_eof:
-                msg = f"Ошибка: ожидалась {expected_msg}. Алгоритм Айронса: вставка '{q}' в конце файла"
+                msg = f"Ошибка: ожидалась {expected_msg}."
             elif is_var_correction and tok:
-                msg = f"Ошибка: ожидалась {expected_msg}. Алгоритм Айронса: замена '{tok.value}' на '{q}'"
+                msg = f"Ошибка: ожидалась {expected_msg}.'"
             else:
-                msg = f"Ошибка: ожидалась {expected_msg}. Алгоритм Айронса: вставка '{q}' перед '{j if j else 'концом файла'}'"
+                msg = f"Ошибка: ожидалась {expected_msg}."
 
             if tok:
                 self.errors.append(ScanError(ERROR_CODES["INVALID_STRUCTURE"], msg, tok.line, tok.column, tok.value))
@@ -315,6 +315,6 @@ class Parser:
     def _check_unexpected_tokens(self):
         while not self._eof():
             tok = self.tokens[self.pos]
-            msg = f"Неожиданная лексема '{tok.value}' после завершения разбора"
+            msg = f"Неожиданная лексема '{tok.value}'"
             self.errors.append(ScanError(ERROR_CODES["INVALID_STRUCTURE"], msg, tok.line, tok.column, tok.value))
             self.pos += 1
