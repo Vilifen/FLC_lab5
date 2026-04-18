@@ -38,7 +38,7 @@ while ($counter < 5) {
 10)<SYMBOL_ID_START> -> letter <ID_IN>
 11)<ID_IN> -> letter <ID_IN> | digit <ID_IN> | '_' <ID_IN> | '++' <OPERATOR_CHANGE> | '--' <OPERATOR_CHANGE>
 12) <OPERATOR_CHANGE> -> ';' <SEMICOLON_IN>
-13) <SEMICOLON_IN> -> ''}' <RIGHT_CURLY_BRACE>
+13) <SEMICOLON_IN> -> '}' <RIGHT_CURLY_BRACE> | '$' <SYMBOL_ID_START>
 14) <RIGHT_CURLY_BRACE> -> ';'  
 ```
 letter - любой символ латинского алфавита (A-Z a-z)

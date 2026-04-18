@@ -10,10 +10,10 @@ class Scanner:
     OPERATORS = {
         "++", "--",
         "<=", ">=", "==", "!=", "&&", "||",
-        "+", "-", "*", "/", "=", "<", ">", "!", "%",
+        "<", ">", "_",
     }
 
-    SEPARATORS = {"(", ")", "{", "}", ";", ","}
+    SEPARATORS = {"(", ")", "{", "}", ";"}
 
     def __init__(self):
         self.text = ""
@@ -54,8 +54,7 @@ class Scanner:
             elif self._starts_operator():
                 self._consume_operator()
             else:
-                self._error("Недопустимый символ", "INVALID_CHAR", ch)
-                self._advance()
+                self._consume_invalid()
 
         self.tokens.append(Token(TokenType.EOF, "", self.line, self.col))
         return self.tokens, self.errors
@@ -85,16 +84,19 @@ class Scanner:
     def _add(self, ttype, value):
         self.tokens.append(Token(ttype, value, self.line, self.col))
 
-    def _error(self, message, code_key, value):
+    def _error(self, message, code_key, value, line=None, col=None):
         code = ERROR_CODES[code_key]
-        self.errors.append(ScanError(code, message, self.line, self.col, value))
+        self.errors.append(
+            ScanError(code, message, line if line is not None else self.line,
+                      col if col is not None else self.col, value)
+        )
 
     def _consume_identifier(self):
         start_line, start_col = self.line, self.col
         value = self._cur()
         self._advance()
 
-        while not self._eof() and (self._cur().isalnum() or self._cur() == "_"):
+        while not self._eof() and not self._is_separator_or_space_or_op_start(self._cur()):
             value += self._cur()
             self._advance()
 
@@ -104,7 +106,7 @@ class Scanner:
         start_line, start_col = self.line, self.col
         value = ""
 
-        while not self._eof() and (self._cur().isalnum() or self._cur() == "_"):
+        while not self._eof() and not self._is_separator_or_space_or_op_start(self._cur()):
             value += self._cur()
             self._advance()
 
@@ -142,3 +144,40 @@ class Scanner:
             self._advance(1)
 
         self.tokens.append(Token(TokenType.OPERATOR, value, start_line, start_col))
+
+    def _is_separator_or_space_or_op_start(self, ch):
+        if ch == "":
+            return True
+        if ch.isspace():
+            return True
+        if ch in self.SEPARATORS:
+            return True
+        if (ch + self._peek()) in self.OPERATORS or ch in self.OPERATORS:
+            return True
+        return False
+
+    def _is_valid_char(self, ch):
+        if ch == "":
+            return False
+        if ch.isspace():
+            return True
+        if ch.isalnum():
+            return True
+        if ch in self.SEPARATORS:
+            return True
+        if ch == "$":
+            return True
+        if (ch + self._peek()) in self.OPERATORS or ch in self.OPERATORS:
+            return True
+        return False
+
+    def _consume_invalid(self):
+        start_line, start_col = self.line, self.col
+        value = ""
+
+        while not self._eof() and not self._is_valid_char(self._cur()):
+            value += self._cur()
+            self._advance()
+
+        if value:
+            self._error("Недопустимая последовательность символов", "INVALID_CHAR", value, start_line, start_col)
