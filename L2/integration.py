@@ -1,5 +1,6 @@
 from .scanner import Scanner
 from .parser import Parser
+from .semantic_analyzer import SemanticAnalyzer
 
 
 def run_scanner(editor):
@@ -9,7 +10,18 @@ def run_scanner(editor):
     tokens, lex_errors = scanner.scan(text)
 
     parser = Parser(tokens)
-    syntax_errors = parser.parse()
+    ast_nodes, syntax_errors = parser.parse()
+
+    semantic_errors = []
+    if not syntax_errors and ast_nodes:
+        analyzer = SemanticAnalyzer()
+        semantic_errors = analyzer.analyze(ast_nodes)
+
+        print("\n" + "=" * 20)
+        print("ПОСТРОЕННОЕ ДЕРЕВО AST:")
+        for node in ast_nodes:
+            node.print_tree()
+        print("=" * 20 + "\n")
 
     all_errors = lex_errors + syntax_errors
 
@@ -34,6 +46,16 @@ def run_scanner(editor):
             "location": f"строка {e.line}, {e.column}",
             "line": e.line,
             "col": e.column
+        })
+
+    for se in semantic_errors:
+        error_rows.append({
+            "code": "SEMANTIC_ERROR",
+            "type": se.message,
+            "lexeme": "",
+            "location": f"строка {se.line}, {se.column}",
+            "line": se.line,
+            "col": se.column
         })
 
     return token_rows, error_rows
