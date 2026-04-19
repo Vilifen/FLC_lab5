@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
             "save_text": "Сохранить изменения в файле", "yes": "Да", "no": "Нет",
             "cancel": "Отмена", "status_lang": "Язык", "status_size": "Размер",
             "status_lines": "Строк", "build": "Сборка", "errors": "Ошибки",
-            "ast_text": "Сохранить дерево (JSON)", "ast_visual": "Показать дерево (графика)"
+            "ast_text": "Сохранить дерево (JSON)", "ast_visual": "Показать AST"
         }
         self.labels_en = {
             "file": "File", "edit": "Edit", "text": "Text", "run": "Run",
@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
             "save_text": "Save changes to file", "yes": "Yes", "no": "No",
             "cancel": "Cancel", "status_lang": "Lang", "status_size": "Size",
             "status_lines": "Lines", "build": "Build", "errors": "Errors",
-            "ast_text": "Save Tree (JSON)", "ast_visual": "Show Tree (visual)"
+            "ast_text": "Save Tree (JSON)", "ast_visual": "Show AST"
         }
         self.labels = self.labels_ru
         self.language = "ru"
