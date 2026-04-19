@@ -31,8 +31,8 @@ def run_scanner(editor):
     for e in all_errors:
         error_rows.append({
             "code": e.code,
-            "type": e.message,
             "lexeme": e.char,
+            "description": e.message,
             "location": f"строка {e.line}, {e.column}",
             "line": e.line,
             "col": e.column
@@ -41,8 +41,8 @@ def run_scanner(editor):
     for se in semantic_errors:
         error_rows.append({
             "code": "SEMANTIC_ERROR",
-            "type": se.message,
             "lexeme": se.char if hasattr(se, 'char') else "",
+            "description": se.message,
             "location": f"строка {se.line}, {se.column}",
             "line": se.line,
             "col": se.column
