@@ -36,6 +36,9 @@ class MenuBuilder:
         self.run_menu = menubar.addMenu(window.labels["run"])
         self.run_menu.addAction(actions.menu_run)
 
+        self.ast_menu = menubar.addMenu("AST")
+        self.ast_menu.addAction(actions.menu_ast_json)
+
         self.help_menu = menubar.addMenu(window.labels["help"])
         self.help_menu.addAction(actions.menu_help)
         self.help_menu.addAction(actions.menu_about)

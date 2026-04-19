@@ -1,7 +1,6 @@
 from PyQt6.QtGui import QAction, QIcon, QKeySequence
 from PyQt6.QtWidgets import QMessageBox
 
-
 class ActionManager:
     def __init__(self, window, controller):
         self.win = window
@@ -49,6 +48,8 @@ class ActionManager:
         self.menu_text_literature = QAction("", window)
         self.menu_text_source = QAction("", window)
 
+        self.menu_ast_json = QAction("", window)
+
         self.menu_run = QAction("", window)
 
         self.menu_help = QAction("", window)
@@ -68,34 +69,27 @@ class ActionManager:
         self.menu_open.setShortcut(QKeySequence.StandardKey.Open)
         self.menu_save.setShortcut(QKeySequence.StandardKey.Save)
         self.menu_save_as.setShortcut("Ctrl+Shift+S")
-
         self.menu_undo.setShortcut(QKeySequence.StandardKey.Undo)
         self.menu_redo.setShortcut(QKeySequence.StandardKey.Redo)
         self.menu_cut.setShortcut(QKeySequence.StandardKey.Cut)
         self.menu_copy.setShortcut(QKeySequence.StandardKey.Copy)
         self.menu_paste.setShortcut(QKeySequence.StandardKey.Paste)
-
         self.menu_delete.setShortcut(QKeySequence.StandardKey.Delete)
         self.menu_select_all.setShortcut(QKeySequence.StandardKey.SelectAll)
-
         self.menu_run.setShortcut("F5")
-
         self.menu_help.setShortcut(QKeySequence.StandardKey.HelpContents)
         self.menu_about.setShortcut("Ctrl+I")
-
         self.menu_exit.setShortcut(QKeySequence.StandardKey.Quit)
-
         self.select_line.setShortcuts(["Ctrl+L", "Meta+L"])
+        self.menu_ast_json.setShortcut("Ctrl+J")
 
     def update_texts(self):
         L = self.win.labels
-
         self.new.setText(L["new"])
         self.open.setText(L["open"])
         self.save.setText(L["save"])
         self.save_as.setText(L["save_as"])
         self.exit.setText(L["exit"])
-
         self.undo.setText(L["undo"])
         self.redo.setText(L["redo"])
         self.copy.setText(L["copy"])
@@ -103,17 +97,14 @@ class ActionManager:
         self.paste.setText(L["paste"])
         self.delete.setText(L["delete"])
         self.select_all.setText(L["select_all"])
-
         self.run.setText(L["run"])
         self.help.setText(L["help"])
         self.about.setText(L["about"])
-
         self.menu_new.setText(L["new"])
         self.menu_open.setText(L["open"])
         self.menu_save.setText(L["save"])
         self.menu_save_as.setText(L["save_as"])
         self.menu_exit.setText(L["exit"])
-
         self.menu_undo.setText(L["undo"])
         self.menu_redo.setText(L["redo"])
         self.menu_cut.setText(L["cut"])
@@ -121,7 +112,6 @@ class ActionManager:
         self.menu_paste.setText(L["paste"])
         self.menu_delete.setText(L["delete"])
         self.menu_select_all.setText(L["select_all"])
-
         self.menu_text_task.setText(L["task"])
         self.menu_text_grammar.setText(L["grammar"])
         self.menu_text_class.setText(L["grammar_class"])
@@ -129,7 +119,7 @@ class ActionManager:
         self.menu_text_example.setText(L["example"])
         self.menu_text_literature.setText(L["literature"])
         self.menu_text_source.setText(L["source"])
-
+        self.menu_ast_json.setText(L["ast_json"])
         self.menu_run.setText(L["run"])
         self.menu_help.setText(L["help"])
         self.menu_about.setText(L["about"])
@@ -140,13 +130,11 @@ class ActionManager:
         self.menu_save.triggered.connect(lambda: self.ctrl.file_save(self.win))
         self.menu_save_as.triggered.connect(lambda: self.ctrl.file_save_as(self.win))
         self.menu_exit.triggered.connect(self.win.close)
-
         self.new.triggered.connect(lambda: self.ctrl.file_new(self.win))
         self.open.triggered.connect(lambda: self.ctrl.file_open(self.win))
         self.save.triggered.connect(lambda: self.ctrl.file_save(self.win))
         self.save_as.triggered.connect(lambda: self.ctrl.file_save_as(self.win))
         self.exit.triggered.connect(self.win.close)
-
         self.undo.triggered.connect(lambda: self.win.get_editor().undo())
         self.redo.triggered.connect(lambda: self.win.get_editor().redo())
         self.copy.triggered.connect(lambda: self.win.get_editor().copy())
@@ -154,7 +142,6 @@ class ActionManager:
         self.paste.triggered.connect(lambda: self.win.get_editor().paste())
         self.delete.triggered.connect(lambda: self.win.get_editor().textCursor().removeSelectedText())
         self.select_all.triggered.connect(lambda: self.win.get_editor().selectAll())
-
         self.menu_undo.triggered.connect(lambda: self.win.get_editor().undo())
         self.menu_redo.triggered.connect(lambda: self.win.get_editor().redo())
         self.menu_cut.triggered.connect(lambda: self.win.get_editor().cut())
@@ -162,7 +149,6 @@ class ActionManager:
         self.menu_paste.triggered.connect(lambda: self.win.get_editor().paste())
         self.menu_delete.triggered.connect(lambda: self.win.get_editor().textCursor().removeSelectedText())
         self.menu_select_all.triggered.connect(lambda: self.win.get_editor().selectAll())
-
         self.menu_text_task.triggered.connect(lambda: self._info(self.win.labels["task"]))
         self.menu_text_grammar.triggered.connect(lambda: self._info(self.win.labels["grammar"]))
         self.menu_text_class.triggered.connect(lambda: self._info(self.win.labels["grammar_class"]))
@@ -170,19 +156,15 @@ class ActionManager:
         self.menu_text_example.triggered.connect(lambda: self._info(self.win.labels["example"]))
         self.menu_text_literature.triggered.connect(lambda: self._info(self.win.labels["literature"]))
         self.menu_text_source.triggered.connect(lambda: self._info(self.win.labels["source"]))
-
+        self.menu_ast_json.triggered.connect(self.win.show_ast_json)
         self.menu_run.triggered.connect(self.win.run_scanner_action)
         self.run.triggered.connect(self.win.run_scanner_action)
-
         self.menu_help.triggered.connect(self.win.show_help)
         self.help.triggered.connect(self.win.show_help)
-
         self.menu_about.triggered.connect(lambda: self.ctrl.about(self.win, self.win.get_output()))
         self.about.triggered.connect(lambda: self.ctrl.about(self.win, self.win.get_output()))
-
         self.lang_ru.triggered.connect(lambda: self.win.set_language("ru"))
         self.lang_en.triggered.connect(lambda: self.win.set_language("en"))
-
         self.select_line.triggered.connect(self._select_current_line)
 
     def _info(self, text):

@@ -1,8 +1,9 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QMessageBox, QStatusBar, QDialog,
-    QVBoxLayout, QTextBrowser, QWidget, QSplitter
+    QVBoxLayout, QTextBrowser, QWidget, QSplitter, QFileDialog, QTextEdit
 )
 from PyQt6.QtCore import QUrl, Qt
+from PyQt6.QtGui import QFont
 import os
 
 from ui.central.central_widget import CentralWidget
@@ -12,6 +13,7 @@ from ui.toolbar import ToolbarBuilder
 
 from L2.integration import run_scanner
 from L2.navigation import navigate_to_error
+
 
 class MainWindow(QMainWindow):
     def __init__(self, controller):
@@ -36,6 +38,7 @@ class MainWindow(QMainWindow):
             "save_text": "Сохранить изменения в файле", "yes": "Да", "no": "Нет",
             "cancel": "Отмена", "status_lang": "Язык", "status_size": "Размер",
             "status_lines": "Строк", "build": "Сборка", "errors": "Ошибки",
+            "ast_json": "Показать AST"
         }
 
         self.labels_en = {
@@ -54,11 +57,13 @@ class MainWindow(QMainWindow):
             "save_text": "Save changes to file", "yes": "Yes", "no": "No",
             "cancel": "Cancel", "status_lang": "Lang", "status_size": "Size",
             "status_lines": "Lines", "build": "Build", "errors": "Errors",
+            "ast_json": "Show AST"
         }
 
         self.labels = self.labels_ru
         self.language = "ru"
         self.font_menu = None
+        self.last_ast = []
 
         self.setWindowTitle("Текстовый редактор")
         self.resize(1000, 700)
@@ -147,9 +152,35 @@ class MainWindow(QMainWindow):
 
     def run_scanner_action(self):
         editor = self.central.editor
-        token_rows, error_rows = run_scanner(editor)
+        token_rows, error_rows, ast_nodes = run_scanner(editor)
+        self.last_ast = ast_nodes
         self.central.set_results(token_rows, error_rows)
-        self.error_status.showMessage(f"Количество ошибок: {len(error_rows)}")
+        self.error_status.showMessage(f"Ошибок: {len(error_rows)}")
+
+    def show_ast_json(self):
+        self.run_scanner_action()
+
+        if not self.last_ast:
+            QMessageBox.warning(self, "AST", "Дерево AST пустое или содержит ошибки.")
+            return
+
+        output_lines = ["=" * 20, "ПОСТРОЕННОЕ ДЕРЕВО AST:"]
+        for node in self.last_ast:
+            output_lines.append(node.get_tree_str().rstrip())
+        output_lines.append("=" * 20)
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle("AST Structure")
+        dlg.resize(600, 500)
+
+        layout = QVBoxLayout(dlg)
+        display = QTextEdit()
+        display.setReadOnly(True)
+        display.setFont(QFont("Courier New", 10))
+        display.setPlainText("\n".join(output_lines))
+
+        layout.addWidget(display)
+        dlg.exec()
 
     def show_help(self):
         dlg = QDialog(self)
