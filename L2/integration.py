@@ -13,11 +13,6 @@ def run_scanner(editor):
     if not syntax_errors and ast_nodes:
         analyzer = SemanticAnalyzer()
         semantic_errors = analyzer.analyze(ast_nodes)
-        print("\n" + "=" * 20)
-        print("ПОСТРОЕННОЕ ДЕРЕВО AST:")
-        for node in ast_nodes:
-            node.print_tree()
-        print("=" * 20 + "\n")
 
     all_errors = lex_errors + syntax_errors
     token_rows = []
