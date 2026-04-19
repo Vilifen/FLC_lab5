@@ -11,18 +11,14 @@ class ActionManager:
         self.save = QAction(QIcon("ui/icons/save.png"), "", window)
         self.save_as = QAction(QIcon("ui/icons/save.png"), "", window)
         self.exit = QAction(QIcon("ui/icons/exit.png"), "", window)
-
         self.undo = QAction(QIcon("ui/icons/cancel.png"), "", window)
         self.redo = QAction(QIcon("ui/icons/repeat.png"), "", window)
-
         self.copy = QAction(QIcon("ui/icons/copy.png"), "", window)
         self.cut = QAction(QIcon("ui/icons/cut.png"), "", window)
         self.paste = QAction(QIcon("ui/icons/insert.png"), "", window)
         self.delete = QAction("", window)
         self.select_all = QAction("", window)
-
         self.run = QAction(QIcon("ui/icons/launch.png"), "", window)
-
         self.help = QAction(QIcon("ui/icons/reference.png"), "", window)
         self.about = QAction(QIcon("ui/icons/information.png"), "", window)
 
@@ -50,15 +46,12 @@ class ActionManager:
 
         self.menu_ast_text = QAction("", window)
         self.menu_ast_visual = QAction("", window)
-
         self.menu_run = QAction("", window)
-
         self.menu_help = QAction("", window)
         self.menu_about = QAction("", window)
 
         self.lang_ru = QAction("Русский", window)
         self.lang_en = QAction("English", window)
-
         self.select_line = QAction("", window)
 
         self._add_shortcuts()
@@ -159,7 +152,7 @@ class ActionManager:
         self.menu_text_example.triggered.connect(lambda: self._info(self.win.labels["example"]))
         self.menu_text_literature.triggered.connect(lambda: self._info(self.win.labels["literature"]))
         self.menu_text_source.triggered.connect(lambda: self._info(self.win.labels["source"]))
-        self.menu_ast_text.triggered.connect(self.win.show_ast_text)
+        self.menu_ast_text.triggered.connect(self.win.save_ast_json)
         self.menu_ast_visual.triggered.connect(self.win.show_ast_visual)
         self.menu_run.triggered.connect(self.win.run_scanner_action)
         self.run.triggered.connect(self.win.run_scanner_action)
@@ -176,8 +169,7 @@ class ActionManager:
 
     def _select_current_line(self):
         editor = self.win.get_editor()
-        if editor is None:
-            return
+        if editor is None: return
         cursor = editor.textCursor()
         cursor.select(cursor.SelectionType.LineUnderCursor)
         editor.setTextCursor(cursor)

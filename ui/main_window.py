@@ -1,10 +1,11 @@
+import json
+import os
 from PyQt6.QtWidgets import (
     QMainWindow, QMessageBox, QStatusBar, QDialog,
     QVBoxLayout, QTextBrowser, QWidget, QSplitter, QFileDialog, QTextEdit
 )
 from PyQt6.QtCore import QUrl, Qt
 from PyQt6.QtGui import QFont
-import os
 
 from ui.central.central_widget import CentralWidget
 from ui.actions import ActionManager
@@ -15,11 +16,9 @@ from ui.ast_visualizer import ASTVisualizer
 from L2.integration import run_scanner
 from L2.navigation import navigate_to_error
 
-
 class MainWindow(QMainWindow):
     def __init__(self, controller):
         super().__init__()
-
         self.labels_ru = {
             "file": "Файл", "edit": "Правка", "text": "Текст", "run": "Пуск",
             "help": "Справка", "localization": "Локализация", "view": "Вид",
@@ -39,9 +38,8 @@ class MainWindow(QMainWindow):
             "save_text": "Сохранить изменения в файле", "yes": "Да", "no": "Нет",
             "cancel": "Отмена", "status_lang": "Язык", "status_size": "Размер",
             "status_lines": "Строк", "build": "Сборка", "errors": "Ошибки",
-            "ast_text": "Показать дерево (текст)", "ast_visual": "Показать дерево (графика)"
+            "ast_text": "Сохранить дерево (JSON)", "ast_visual": "Показать дерево (графика)"
         }
-
         self.labels_en = {
             "file": "File", "edit": "Edit", "text": "Text", "run": "Run",
             "help": "Help", "localization": "Language", "view": "View",
@@ -58,138 +56,95 @@ class MainWindow(QMainWindow):
             "save_text": "Save changes to file", "yes": "Yes", "no": "No",
             "cancel": "Cancel", "status_lang": "Lang", "status_size": "Size",
             "status_lines": "Lines", "build": "Build", "errors": "Errors",
-            "ast_text": "Show Tree (text)", "ast_visual": "Show Tree (visual)"
+            "ast_text": "Save Tree (JSON)", "ast_visual": "Show Tree (visual)"
         }
-
         self.labels = self.labels_ru
         self.language = "ru"
         self.font_menu = None
         self.last_ast = []
-
         self.setWindowTitle("Текстовый редактор")
         self.resize(1000, 700)
         self.menuBar().setNativeMenuBar(False)
-
         self.status = QStatusBar()
         self.setStatusBar(self.status)
-
         self.central = CentralWidget()
-
         splitter = QSplitter(Qt.Orientation.Vertical)
         splitter.addWidget(self.central.editor_area)
         splitter.addWidget(self.central.results_area)
         splitter.setSizes([600, 300])
         splitter.setHandleWidth(6)
-
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(splitter)
-
         self.error_status = QStatusBar()
         layout.addWidget(self.error_status)
-
         self.setCentralWidget(container)
-
         self.actions = ActionManager(self, controller)
         self.menu_builder = MenuBuilder(self, self.actions)
         ToolbarBuilder(self, self.actions)
-
         self._build_font_menu()
-
         self.central.editor.textChanged.connect(self.update_status_bar)
         self.central.table.itemClicked.connect(self._on_table_item_clicked)
         self.central.error_table.itemClicked.connect(self._on_table_item_clicked)
 
+    def save_ast_json(self):
+        _, _, ast_nodes = run_scanner(self.central.editor)
+        if not ast_nodes:
+            QMessageBox.warning(self, "AST", "Дерево пустое или содержит ошибки.")
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Сохранить AST в JSON", "", "JSON Files (*.json)")
+        if path:
+            def to_dict(node):
+                if node is None: return None
+                d = {"node": node.__class__.__name__}
+                for k, v in node.__dict__.items():
+                    if isinstance(v, (int, str, float, bool)): d[k] = v
+                    elif isinstance(v, list): d[k] = [to_dict(i) if hasattr(i, "__dict__") else i for i in v]
+                    elif hasattr(v, "__dict__"): d[k] = to_dict(v)
+                return d
+            try:
+                with open(path, 'w', encoding='utf-8') as f:
+                    json.dump([to_dict(n) for n in ast_nodes], f, ensure_ascii=False, indent=4)
+                self.status.showMessage(f"AST сохранено: {path}", 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "Ошибка", f"Не удалось сохранить: {e}")
+
     def _on_table_item_clicked(self, item):
         editor = self.central.editor
         row = item.row()
-
-        # Определяем, из какой таблицы пришел клик
-        if self.central.results_tabs.currentIndex() == 0:
-            rows = self.central.token_rows
-        elif self.central.results_tabs.currentIndex() == 1:
-            rows = self.central.error_rows
-        else:
-            return
-
+        rows = self.central.token_rows if self.central.results_tabs.currentIndex() == 0 else self.central.error_rows
         if 0 <= row < len(rows):
             navigate_to_error(editor, rows[row]["line"], rows[row]["col"])
 
     def set_language(self, lang):
-        if lang == "en":
-            self.labels = self.labels_en
-            self.language = "en"
-        else:
-            self.labels = self.labels_ru
-            self.language = "ru"
-
+        self.labels = self.labels_en if lang == "en" else self.labels_ru
+        self.language = lang
         self.actions.update_texts()
         self.menu_builder.update_menu_titles()
-        if self.font_menu is not None:
-            self.font_menu.setTitle(self.labels["font_size"])
+        if self.font_menu: self.font_menu.setTitle(self.labels["font_size"])
         self.update_ui_language()
         self.update_status_bar()
 
     def update_ui_language(self):
-        self.actions.new.setText(self.labels["new"])
-        self.actions.open.setText(self.labels["open"])
-        self.actions.save.setText(self.labels["save"])
-        self.actions.save_as.setText(self.labels["save_as"])
-        self.actions.exit.setText(self.labels["exit"])
-        self.actions.undo.setText(self.labels["undo"])
-        self.actions.redo.setText(self.labels["redo"])
-        self.actions.cut.setText(self.labels["cut"])
-        self.actions.copy.setText(self.labels["copy"])
-        self.actions.paste.setText(self.labels["paste"])
-        self.actions.delete.setText(self.labels["delete"])
-        self.actions.select_all.setText(self.labels["select_all"])
-        self.actions.run.setText(self.labels["run"])
-        self.actions.help.setText(self.labels["help"])
-        self.actions.about.setText(self.labels["about"])
-
-        # Обновление заголовков вкладок нижнего виджета
         self.central.results_tabs.setTabText(0, self.labels["build"])
         self.central.results_tabs.setTabText(1, self.labels["errors"])
         self.central.results_tabs.setTabText(2, "AST")
 
-        if self.language == "en":
-            self.central.table.setHorizontalHeaderLabels(["Code", "Type", "Lexeme", "Location"])
-            self.central.error_table.setHorizontalHeaderLabels(["Fragment", "Location", "Description"])
-        else:
-            self.central.table.setHorizontalHeaderLabels(["Код", "Тип", "Лексема", "Местоположение"])
-            self.central.error_table.setHorizontalHeaderLabels(["Фрагмент", "Место", "Описание"])
-
     def run_scanner_action(self):
-        editor = self.central.editor
-        token_rows, error_rows, ast_nodes = run_scanner(editor)
+        token_rows, error_rows, ast_nodes = run_scanner(self.central.editor)
         self.last_ast = ast_nodes
-
-        # Обновляем таблицы результатов и ошибок
         self.central.set_results(token_rows, error_rows)
-
-        # Формируем и выводим текстовое представление дерева AST во вкладку
-        if ast_nodes:
-            ast_text = "ДЕРЕВО AST:\n" + "\n".join([node.get_tree_str().rstrip() for node in ast_nodes])
-        else:
-            ast_text = "Дерево AST пустое или содержит ошибки."
-
+        ast_text = "ДЕРЕВО AST:\n" + "\n".join([n.get_tree_str().rstrip() for n in ast_nodes]) if ast_nodes else "Пусто"
         self.central.ast_display.setPlainText(ast_text)
         self.error_status.showMessage(f"Ошибок: {len(error_rows)}")
-
-    def show_ast_text(self):
-        self.run_scanner_action()
-        # Переключаем на вкладку AST (индекс 2)
-        self.central.results_tabs.setCurrentIndex(2)
 
     def show_ast_visual(self):
         self.run_scanner_action()
         if not self.last_ast:
-            QMessageBox.warning(self, "AST", "Дерево AST пустое или содержит ошибки.")
+            QMessageBox.warning(self, "AST", "Дерево пустое.")
             return
-
-        dlg = ASTVisualizer(self.last_ast, self)
-        dlg.exec()
+        ASTVisualizer(self.last_ast, self).exec()
 
     def show_help(self):
         dlg = QDialog(self)
@@ -198,40 +153,20 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(dlg)
         browser = QTextBrowser()
         layout.addWidget(browser)
-        path = os.path.abspath("ui/html files/user_guide.html")
-        browser.setSource(QUrl.fromLocalFile(path))
+        browser.setSource(QUrl.fromLocalFile(os.path.abspath("ui/html files/user_guide.html")))
         dlg.exec()
 
     def _build_font_menu(self):
-        view_menu = None
-        for act in self.menuBar().actions():
-            menu = act.menu()
-            if menu and menu.title() == self.labels["view"]:
-                view_menu = menu
-                break
-        if view_menu is None:
-            return
+        view_menu = next((a.menu() for a in self.menuBar().actions() if a.menu() and a.menu().title() == self.labels["view"]), None)
+        if not view_menu: return
         self.font_menu = view_menu.addMenu(self.labels["font_size"])
-        sizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 32]
-        for size in sizes:
-            action = self.font_menu.addAction(str(size))
-            action.triggered.connect(lambda _, s=size: self.central.set_font_size(s))
+        for s in [8, 10, 12, 14, 16, 18, 24, 32]:
+            self.font_menu.addAction(str(s)).triggered.connect(lambda _, size=s: self.central.set_font_size(size))
 
     def update_status_bar(self):
         text = self.central.editor.toPlainText()
-        size = len(text.encode("utf-8"))
-        lines = text.count("\n") + 1
-        self.status.showMessage(
-            f"{self.labels['status_lang']}: {self.language.upper()}    "
-            f"{self.labels['status_size']}: {size} B    "
-            f"{self.labels['status_lines']}: {lines}"
-        )
+        self.status.showMessage(f"{self.labels['status_lang']}: {self.language.upper()} | {len(text.encode())} B | {text.count(chr(10))+1} L")
 
-    def get_editor(self):
-        return self.central.editor
-
-    def dragEnterEvent(self, event):
-        event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        self.central.dropEvent(event)
+    def get_editor(self): return self.central.editor
+    def dragEnterEvent(self, e): e.acceptProposedAction()
+    def dropEvent(self, e): self.central.dropEvent(e)
