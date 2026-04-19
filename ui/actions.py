@@ -48,7 +48,8 @@ class ActionManager:
         self.menu_text_literature = QAction("", window)
         self.menu_text_source = QAction("", window)
 
-        self.menu_ast_json = QAction("", window)
+        self.menu_ast_text = QAction("", window)
+        self.menu_ast_visual = QAction("", window)
 
         self.menu_run = QAction("", window)
 
@@ -81,7 +82,8 @@ class ActionManager:
         self.menu_about.setShortcut("Ctrl+I")
         self.menu_exit.setShortcut(QKeySequence.StandardKey.Quit)
         self.select_line.setShortcuts(["Ctrl+L", "Meta+L"])
-        self.menu_ast_json.setShortcut("Ctrl+J")
+        self.menu_ast_text.setShortcut("Ctrl+J")
+        self.menu_ast_visual.setShortcut("Ctrl+G")
 
     def update_texts(self):
         L = self.win.labels
@@ -119,7 +121,8 @@ class ActionManager:
         self.menu_text_example.setText(L["example"])
         self.menu_text_literature.setText(L["literature"])
         self.menu_text_source.setText(L["source"])
-        self.menu_ast_json.setText(L["ast_json"])
+        self.menu_ast_text.setText(L["ast_text"])
+        self.menu_ast_visual.setText(L["ast_visual"])
         self.menu_run.setText(L["run"])
         self.menu_help.setText(L["help"])
         self.menu_about.setText(L["about"])
@@ -156,7 +159,8 @@ class ActionManager:
         self.menu_text_example.triggered.connect(lambda: self._info(self.win.labels["example"]))
         self.menu_text_literature.triggered.connect(lambda: self._info(self.win.labels["literature"]))
         self.menu_text_source.triggered.connect(lambda: self._info(self.win.labels["source"]))
-        self.menu_ast_json.triggered.connect(self.win.show_ast_json)
+        self.menu_ast_text.triggered.connect(self.win.show_ast_text)
+        self.menu_ast_visual.triggered.connect(self.win.show_ast_visual)
         self.menu_run.triggered.connect(self.win.run_scanner_action)
         self.run.triggered.connect(self.win.run_scanner_action)
         self.menu_help.triggered.connect(self.win.show_help)

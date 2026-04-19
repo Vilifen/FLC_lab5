@@ -10,6 +10,7 @@ from ui.central.central_widget import CentralWidget
 from ui.actions import ActionManager
 from ui.menus import MenuBuilder
 from ui.toolbar import ToolbarBuilder
+from ui.ast_visualizer import ASTVisualizer
 
 from L2.integration import run_scanner
 from L2.navigation import navigate_to_error
@@ -38,7 +39,7 @@ class MainWindow(QMainWindow):
             "save_text": "Сохранить изменения в файле", "yes": "Да", "no": "Нет",
             "cancel": "Отмена", "status_lang": "Язык", "status_size": "Размер",
             "status_lines": "Строк", "build": "Сборка", "errors": "Ошибки",
-            "ast_json": "Показать AST"
+            "ast_text": "Показать AST (Текст)", "ast_visual": "Показать AST (Графика)"
         }
 
         self.labels_en = {
@@ -57,7 +58,7 @@ class MainWindow(QMainWindow):
             "save_text": "Save changes to file", "yes": "Yes", "no": "No",
             "cancel": "Cancel", "status_lang": "Lang", "status_size": "Size",
             "status_lines": "Lines", "build": "Build", "errors": "Errors",
-            "ast_json": "Show AST"
+            "ast_text": "Show AST (Text)", "ast_visual": "Show AST (Graphic)"
         }
 
         self.labels = self.labels_ru
@@ -157,9 +158,8 @@ class MainWindow(QMainWindow):
         self.central.set_results(token_rows, error_rows)
         self.error_status.showMessage(f"Ошибок: {len(error_rows)}")
 
-    def show_ast_json(self):
+    def show_ast_text(self):
         self.run_scanner_action()
-
         if not self.last_ast:
             QMessageBox.warning(self, "AST", "Дерево AST пустое или содержит ошибки.")
             return
@@ -170,7 +170,7 @@ class MainWindow(QMainWindow):
         output_lines.append("=" * 20)
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("AST Structure")
+        dlg.setWindowTitle("AST Text View")
         dlg.resize(600, 500)
 
         layout = QVBoxLayout(dlg)
@@ -180,6 +180,15 @@ class MainWindow(QMainWindow):
         display.setPlainText("\n".join(output_lines))
 
         layout.addWidget(display)
+        dlg.exec()
+
+    def show_ast_visual(self):
+        self.run_scanner_action()
+        if not self.last_ast:
+            QMessageBox.warning(self, "AST", "Дерево AST пустое или содержит ошибки.")
+            return
+
+        dlg = ASTVisualizer(self.last_ast, self)
         dlg.exec()
 
     def show_help(self):
