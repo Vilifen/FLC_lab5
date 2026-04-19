@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
             "save_text": "Сохранить изменения в файле", "yes": "Да", "no": "Нет",
             "cancel": "Отмена", "status_lang": "Язык", "status_size": "Размер",
             "status_lines": "Строк", "build": "Сборка", "errors": "Ошибки",
-            "ast_text": "Показать JSON", "ast_visual": "Показать AST"
+            "ast_text": "Показать дерево (текст)", "ast_visual": "Показать дерево (графика)"
         }
 
         self.labels_en = {
@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
             "save_text": "Save changes to file", "yes": "Yes", "no": "No",
             "cancel": "Cancel", "status_lang": "Lang", "status_size": "Size",
             "status_lines": "Lines", "build": "Build", "errors": "Errors",
-            "ast_text": "Show JSON", "ast_visual": "Show AST"
+            "ast_text": "Show Tree (text)", "ast_visual": "Show Tree (visual)"
         }
 
         self.labels = self.labels_ru
@@ -99,15 +99,20 @@ class MainWindow(QMainWindow):
 
         self.central.editor.textChanged.connect(self.update_status_bar)
         self.central.table.itemClicked.connect(self._on_table_item_clicked)
+        self.central.error_table.itemClicked.connect(self._on_table_item_clicked)
 
     def _on_table_item_clicked(self, item):
         editor = self.central.editor
         row = item.row()
-        rows = (
-            self.central.token_rows
-            if self.central.output_mode == "build"
-            else self.central.error_rows
-        )
+
+        # Определяем, из какой таблицы пришел клик
+        if self.central.results_tabs.currentIndex() == 0:
+            rows = self.central.token_rows
+        elif self.central.results_tabs.currentIndex() == 1:
+            rows = self.central.error_rows
+        else:
+            return
+
         if 0 <= row < len(rows):
             navigate_to_error(editor, rows[row]["line"], rows[row]["col"])
 
@@ -143,43 +148,39 @@ class MainWindow(QMainWindow):
         self.actions.help.setText(self.labels["help"])
         self.actions.about.setText(self.labels["about"])
 
-        self.central.build_btn.setText(self.labels["build"])
-        self.central.err_btn.setText(self.labels["errors"])
+        # Обновление заголовков вкладок нижнего виджета
+        self.central.results_tabs.setTabText(0, self.labels["build"])
+        self.central.results_tabs.setTabText(1, self.labels["errors"])
+        self.central.results_tabs.setTabText(2, "AST")
 
         if self.language == "en":
             self.central.table.setHorizontalHeaderLabels(["Code", "Type", "Lexeme", "Location"])
+            self.central.error_table.setHorizontalHeaderLabels(["Fragment", "Location", "Description"])
         else:
             self.central.table.setHorizontalHeaderLabels(["Код", "Тип", "Лексема", "Местоположение"])
+            self.central.error_table.setHorizontalHeaderLabels(["Фрагмент", "Место", "Описание"])
 
     def run_scanner_action(self):
         editor = self.central.editor
         token_rows, error_rows, ast_nodes = run_scanner(editor)
         self.last_ast = ast_nodes
+
+        # Обновляем таблицы результатов и ошибок
         self.central.set_results(token_rows, error_rows)
+
+        # Формируем и выводим текстовое представление дерева AST во вкладку
+        if ast_nodes:
+            ast_text = "ДЕРЕВО AST:\n" + "\n".join([node.get_tree_str().rstrip() for node in ast_nodes])
+        else:
+            ast_text = "Дерево AST пустое или содержит ошибки."
+
+        self.central.ast_display.setPlainText(ast_text)
         self.error_status.showMessage(f"Ошибок: {len(error_rows)}")
 
     def show_ast_text(self):
         self.run_scanner_action()
-        if not self.last_ast:
-            QMessageBox.warning(self, "AST", "Дерево AST пустое или содержит ошибки.")
-            return
-
-        output_lines = ["ДЕРЕВО AST:"]
-        for node in self.last_ast:
-            output_lines.append(node.get_tree_str().rstrip())
-
-        dlg = QDialog(self)
-        dlg.setWindowTitle("AST")
-        dlg.resize(600, 500)
-
-        layout = QVBoxLayout(dlg)
-        display = QTextEdit()
-        display.setReadOnly(True)
-        display.setFont(QFont("Courier New", 10))
-        display.setPlainText("\n".join(output_lines))
-
-        layout.addWidget(display)
-        dlg.exec()
+        # Переключаем на вкладку AST (индекс 2)
+        self.central.results_tabs.setCurrentIndex(2)
 
     def show_ast_visual(self):
         self.run_scanner_action()
