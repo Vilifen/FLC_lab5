@@ -10,7 +10,7 @@ def run_scanner(editor):
     ast_nodes, syntax_errors = parser.parse()
     semantic_errors = []
 
-    if not syntax_errors and ast_nodes:
+    if ast_nodes:
         analyzer = SemanticAnalyzer()
         semantic_errors = analyzer.analyze(ast_nodes)
 
@@ -42,7 +42,7 @@ def run_scanner(editor):
         error_rows.append({
             "code": "SEMANTIC_ERROR",
             "type": se.message,
-            "lexeme": "",
+            "lexeme": se.char if hasattr(se, 'char') else "",
             "location": f"строка {se.line}, {se.column}",
             "line": se.line,
             "col": se.column
