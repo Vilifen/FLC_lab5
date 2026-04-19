@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
             "save_text": "Сохранить изменения в файле", "yes": "Да", "no": "Нет",
             "cancel": "Отмена", "status_lang": "Язык", "status_size": "Размер",
             "status_lines": "Строк", "build": "Сборка", "errors": "Ошибки",
-            "ast_text": "Показать AST (Текст)", "ast_visual": "Показать AST (Графика)"
+            "ast_text": "Показать JSON", "ast_visual": "Показать AST"
         }
 
         self.labels_en = {
@@ -58,7 +58,7 @@ class MainWindow(QMainWindow):
             "save_text": "Save changes to file", "yes": "Yes", "no": "No",
             "cancel": "Cancel", "status_lang": "Lang", "status_size": "Size",
             "status_lines": "Lines", "build": "Build", "errors": "Errors",
-            "ast_text": "Show AST (Text)", "ast_visual": "Show AST (Graphic)"
+            "ast_text": "Show JSON", "ast_visual": "Show AST"
         }
 
         self.labels = self.labels_ru
@@ -164,13 +164,12 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "AST", "Дерево AST пустое или содержит ошибки.")
             return
 
-        output_lines = ["=" * 20, "ПОСТРОЕННОЕ ДЕРЕВО AST:"]
+        output_lines = ["ДЕРЕВО AST:"]
         for node in self.last_ast:
             output_lines.append(node.get_tree_str().rstrip())
-        output_lines.append("=" * 20)
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("AST Text View")
+        dlg.setWindowTitle("AST")
         dlg.resize(600, 500)
 
         layout = QVBoxLayout(dlg)

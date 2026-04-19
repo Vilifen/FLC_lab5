@@ -36,10 +36,6 @@ class MenuBuilder:
         self.run_menu = menubar.addMenu(window.labels["run"])
         self.run_menu.addAction(actions.menu_run)
 
-        self.ast_menu = menubar.addMenu("AST")
-        self.ast_menu.addAction(actions.menu_ast_text)
-        self.ast_menu.addAction(actions.menu_ast_visual)
-
         self.help_menu = menubar.addMenu(window.labels["help"])
         self.help_menu.addAction(actions.menu_help)
         self.help_menu.addAction(actions.menu_about)
@@ -49,6 +45,10 @@ class MenuBuilder:
         self.localization_menu.addAction(actions.lang_en)
 
         self.view_menu = menubar.addMenu(window.labels["view"])
+
+        self.ast_menu = menubar.addMenu("AST")
+        self.ast_menu.addAction(actions.menu_ast_text)
+        self.ast_menu.addAction(actions.menu_ast_visual)
 
     def update_menu_titles(self):
         L = self.window.labels

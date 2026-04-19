@@ -21,7 +21,7 @@ class SemanticError:
         self.line = line
         self.column = column
         self.code = "SEMANTIC_ERROR"
-        self.char = value  # Это то самое поле, которое требовал traceback
+        self.char = value
         self.value = value
 
 
@@ -86,5 +86,5 @@ class SemanticAnalyzer:
         if cond_var_names and not cond_var_names.intersection(body_var_names):
             trigger_v = cond_vars[0]
             self.errors.append(SemanticError(
-                "переменные условия не изменяются в теле цикла (возможно зацикливание)",
+                "Переменная условия не появляется в теле цикла",
                 trigger_v.line, trigger_v.column, trigger_v.name))

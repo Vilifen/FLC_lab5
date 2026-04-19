@@ -6,7 +6,7 @@ from PyQt6.QtCore import Qt
 class ASTVisualizer(QDialog):
     def __init__(self, ast_nodes, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("AST Visualizer")
+        self.setWindowTitle("AST")
         self.resize(800, 600)
 
         self.scene = QGraphicsScene()
